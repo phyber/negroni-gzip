@@ -37,6 +37,7 @@ func Gzip() *Gzipper {
 
 func (g *Gzipper) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	if !strings.Contains(r.Header.Get(HeaderAcceptEncoding), "gzip") {
+		next(w, r)
 		return
 	}
 
