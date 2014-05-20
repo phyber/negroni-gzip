@@ -10,7 +10,7 @@ Not tested very much but Works For Me (TM).
 ~~~ go
 import (
   "github.com/codegangsta/negroni"
-  "github.com/phyber/negroni-gzip"
+  "github.com/phyber/negroni-gzip/gzip"
 )
 
 func main() {
