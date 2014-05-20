@@ -55,5 +55,5 @@ func (g *Gzipper) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 	next(gzw, r)
 
 	// delete content length after we know we have been written to
-	gzw.Header().Del("Content-Length")
+	gzw.Header().Del(HeaderContentLength)
 }
