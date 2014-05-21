@@ -19,7 +19,7 @@ func main() {
     fmt.Fprintf(w, "Welcome to the home page!")
   }
   n := negroni.Classic()
-  n.Use(gzip.Gzip())
+  n.Use(gzip.Gzip(gzip.DefaultCompression))
   n.UseHandler(mux)
   n.Run(":3000")
 }
