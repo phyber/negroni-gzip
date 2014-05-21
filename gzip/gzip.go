@@ -77,9 +77,12 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 	headers.Set(headerContentEncoding, encodingGzip)
 	headers.Set(headerVary, headerAcceptEncoding)
 
+	// Wrap the original http.ResponseWriter with the negroni.ResponseWriter.
+	nrw := negroni.NewResponseWriter(w)
+
 	grw := gzipResponseWriter{
 		gz,
-		w.(negroni.ResponseWriter),
+		nrw,
 	}
 
 	next(grw, r)
