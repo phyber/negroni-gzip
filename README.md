@@ -1,7 +1,10 @@
 # gzip
 
 Gzip middleware for Negroni.
-Mostly a copy of the Martini gzip module with small changes to make it function under Negroni.
+
+Mostly a copy of the Martini gzip module with small changes to make it function
+under Negroni. Support for setting the compression level has also been added
+and tests have been written. Test coverage is 100% according to 'git cover'.
 
 ## Usage
 
