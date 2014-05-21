@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	gzipTestString = "Foobar Wibble Content"
+	gzipTestString              = "Foobar Wibble Content"
+	gzipInvalidCompressionLevel = 11
 )
 
 func testHTTPContent(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +76,7 @@ func Test_ServeHTTP_CompressionWithNoGzipHeader(t *testing.T) {
 }
 
 func Test_ServeHTTP_InvalidCompressionLevel(t *testing.T) {
-	gzipHandler := Gzip(11)
+	gzipHandler := Gzip(gzipInvalidCompressionLevel)
 	w := httptest.NewRecorder()
 
 	req, err := http.NewRequest("GET", "http://localhost/foobar", nil)
