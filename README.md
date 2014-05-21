@@ -3,25 +3,23 @@
 Gzip middleware for Negroni.
 Mostly a copy of the Martini gzip module with small changes to make it function under Negroni.
 
-Not tested very much but Works For Me (TM).
-
 ## Usage
 
 ~~~ go
 import (
-  "github.com/codegangsta/negroni"
-  "github.com/phyber/negroni-gzip/gzip"
+    "github.com/codegangsta/negroni"
+    "github.com/phyber/negroni-gzip/gzip"
 )
 
 func main() {
-  mux := http.NewServeMux()
-  mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-    fmt.Fprintf(w, "Welcome to the home page!")
-  }
-  n := negroni.Classic()
-  n.Use(gzip.Gzip(gzip.DefaultCompression))
-  n.UseHandler(mux)
-  n.Run(":3000")
+    mux := http.NewServeMux()
+    mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+      fmt.Fprintf(w, "Welcome to the home page!")
+    }
+    n := negroni.Classic()
+    n.Use(gzip.Gzip(gzip.DefaultCompression))
+    n.UseHandler(mux)
+    n.Run(":3000")
 }
 
 ~~~
