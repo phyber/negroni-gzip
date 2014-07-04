@@ -1,6 +1,6 @@
 # gzip
 
-Gzip middleware for Negroni.
+Gzip middleware for [Negroni](https://github.com/codegangsta/negroni).
 
 Mostly a copy of the Martini gzip module with small changes to make it function
 under Negroni. Support for setting the compression level has also been added
@@ -24,10 +24,10 @@ func main() {
     n.UseHandler(mux)
     n.Run(":3000")
 }
-
 ~~~
 
-Make sure to include the Gzip middleware above other middleware that alter the response body.
+Make sure to include the Gzip middleware above any other middleware that alter
+the response body.
 
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
