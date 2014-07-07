@@ -48,7 +48,7 @@ type handler struct {
 	compressionLevel int
 }
 
-// Gzip returns our handler which will handle the Gzip compression in ServeHTTP.
+// Gzip returns a handler which will handle the Gzip compression in ServeHTTP.
 // Valid values for level are identical to those in the compress/gzip package.
 func Gzip(level int) *handler {
 	return &handler{
@@ -64,8 +64,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 		return
 	}
 
-	// Create new gzip Writer. Skip compression if an invalid compression level
-	// was set.
+	// Create new gzip Writer. Skip compression if an invalid compression
+	// level was set.
 	gz, err := gzip.NewWriterLevel(w, h.compressionLevel)
 	if err != nil {
 		next(w, r)
@@ -73,18 +73,21 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 	}
 	defer gz.Close()
 
+	// Set the appropriate gzip headers.
 	headers := w.Header()
 	headers.Set(headerContentEncoding, encodingGzip)
 	headers.Set(headerVary, headerAcceptEncoding)
 
-	// Wrap the original http.ResponseWriter with the negroni.ResponseWriter.
+	// Wrap the original http.ResponseWriter with negroni.ResponseWriter
+	// and create the gzipResponseWriter.
 	nrw := negroni.NewResponseWriter(w)
-
 	grw := gzipResponseWriter{
 		gz,
 		nrw,
 	}
 
+	// Call the next handler supplying the gzipResponseWriter instead of
+	// the original.
 	next(grw, r)
 
 	// Delete the content length after we know we have been written to.
