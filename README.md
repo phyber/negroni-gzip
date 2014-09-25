@@ -9,16 +9,21 @@ and tests have been written. Test coverage is 100% according to 'git cover'.
 ## Usage
 
 ~~~ go
+package main
+
 import (
+    "fmt"
     "github.com/codegangsta/negroni"
     "github.com/phyber/negroni-gzip/gzip"
+    "net/http"
 )
 
 func main() {
     mux := http.NewServeMux()
     mux.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
-      fmt.Fprintf(w, "Welcome to the home page!")
-    }
+    	  fmt.Fprintf(w, "Welcome to the home page!")
+    })
+
     n := negroni.Classic()
     n.Use(gzip.Gzip(gzip.DefaultCompression))
     n.UseHandler(mux)
