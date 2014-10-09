@@ -18,6 +18,7 @@ const (
 	headerContentLength   = "Content-Length"
 	headerContentType     = "Content-Type"
 	headerVary            = "Vary"
+	headerSecWebSocketKey = "Sec-WebSocket-Key"
 
 	BestCompression    = gzip.BestCompression
 	BestSpeed          = gzip.BestSpeed
@@ -60,6 +61,12 @@ func Gzip(level int) *handler {
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
 	// Skip compression if the client doesn't accept gzip encoding.
 	if !strings.Contains(r.Header.Get(headerAcceptEncoding), encodingGzip) {
+		next(w, r)
+		return
+	}
+
+	// Skip compression if client attempt WebSocket connection
+	if len(r.Header.Get(headerSecWebSocketKey)) > 0 {
 		next(w, r)
 		return
 	}
