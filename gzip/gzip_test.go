@@ -11,6 +11,7 @@ import (
 
 const (
 	gzipTestString              = "Foobar Wibble Content"
+	gzipTestWebSocketKey        = "Test"
 	gzipInvalidCompressionLevel = 11
 )
 
@@ -84,6 +85,24 @@ func Test_ServeHTTP_InvalidCompressionLevel(t *testing.T) {
 		t.Fatal(err)
 	}
 	req.Header.Set(headerAcceptEncoding, encodingGzip)
+
+	gzipHandler.ServeHTTP(w, req, testHTTPContent)
+
+	if w.Body.String() != gzipTestString {
+		t.Fail()
+	}
+}
+
+func Test_ServeHTTP_WebSocketConnection(t *testing.T) {
+	gzipHandler := Gzip(DefaultCompression)
+	w := httptest.NewRecorder()
+
+	req, err := http.NewRequest("GET", "http://localhost/foobar", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set(headerAcceptEncoding, encodingGzip)
+	req.Header.Set(headerSecWebSocketKey, gzipTestWebSocketKey)
 
 	gzipHandler.ServeHTTP(w, req, testHTTPContent)
 
