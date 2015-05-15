@@ -70,7 +70,13 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 		next(w, r)
 		return
 	}
-
+	
+	// Skip compression if already comprssed
+	if w.Header().Get(headerContentEncoding) == encodingGzip {
+		next(w, r)
+		return
+	}
+	
 	// Create new gzip Writer. Skip compression if an invalid compression
 	// level was set.
 	gz, err := gzip.NewWriterLevel(w, h.compressionLevel)
