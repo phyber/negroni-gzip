@@ -4,7 +4,7 @@ Gzip middleware for [Negroni](https://github.com/codegangsta/negroni).
 
 Mostly a copy of the Martini gzip module with small changes to make it function
 under Negroni. Support for setting the compression level has also been added
-and tests have been written. Test coverage is 100% according to 'git cover'.
+and tests have been written. Test coverage is 100% according to `git cover`.
 
 ## Usage
 
@@ -35,10 +35,12 @@ func main() {
 Make sure to include the Gzip middleware above any other middleware that alter
 the response body.
 
-**Pro-Tip :**
-As noted above, any middleware that alters response body will need to be below 
-the Gzip middleware. If you wish to gzip static files served by the default negroni 
-Static middleware you will need to include negroni.Static() after gzip.Gzip().
+## Tips
+
+As noted above, any middleware that alters response body will need to be below
+the Gzip middleware. If you wish to gzip static files served by the default
+negroni Static middleware you will need to include `negroni.Static()` after
+`gzip.Gzip()`.
 
 ~~~go
     n := negroni.New()
