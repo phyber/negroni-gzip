@@ -35,6 +35,19 @@ func main() {
 Make sure to include the Gzip middleware above any other middleware that alter
 the response body.
 
+**Pro-Tip :**
+As noted above, any middleware that alters response body will need to be below 
+the Gzip middleware. If you wish to gzip static files served by the default negroni 
+Static middleware you will need to include negroni.Static() after gzip.Gzip().
+
+~~~go
+    n := negroni.New()
+    n.Use(negroni.NewRecovery())
+    n.Use(negroni.NewLogger())
+    n.Use(gzip.Gzip(gzip.DefaultCompression))
+    n.Use(negroni.NewStatic(http.Dir("public")))
+~~~
+
 ## Authors
 * [Jeremy Saenz](http://github.com/codegangsta)
 * [Shane Logsdon](http://github.com/slogsdon)
