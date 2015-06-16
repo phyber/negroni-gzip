@@ -54,3 +54,5 @@ negroni Static middleware you will need to include `negroni.Static()` after
 * [Jeremy Saenz](http://github.com/codegangsta)
 * [Shane Logsdon](http://github.com/slogsdon)
 * [David O'Rourke](https://github.com/phyber)
+
+And many others. Check the commit log for a complete list.
