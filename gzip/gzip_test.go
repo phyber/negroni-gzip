@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 const (
@@ -86,11 +87,21 @@ func Test_ServeHTTP_InvalidCompressionLevel(t *testing.T) {
 	}
 	req.Header.Set(headerAcceptEncoding, encodingGzip)
 
+	stop := make(chan struct{})
+	defer func() {
+		if r := recover(); r != nil {
+			close(stop)
+		}
+	}()
+
 	gzipHandler.ServeHTTP(w, req, testHTTPContent)
 
-	if w.Body.String() != gzipTestString {
+	select {
+	case <-stop:
+	case <-time.After(50 * time.Millisecond):
 		t.Fail()
 	}
+
 }
 
 func Test_ServeHTTP_WebSocketConnection(t *testing.T) {
@@ -109,4 +120,25 @@ func Test_ServeHTTP_WebSocketConnection(t *testing.T) {
 	if w.Body.String() != gzipTestString {
 		t.Fail()
 	}
+}
+
+func Benchmark_ServeHTTP(b *testing.B) {
+
+	b.StopTimer()
+	b.ReportAllocs()
+
+	gzipHandler := Gzip(DefaultCompression)
+	req, err := http.NewRequest("GET", "http://localhost/foobar", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+	req.Header.Set(headerAcceptEncoding, encodingGzip)
+
+	b.StartTimer()
+
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder()
+		gzipHandler.ServeHTTP(w, req, testHTTPContent)
+	}
+
 }
