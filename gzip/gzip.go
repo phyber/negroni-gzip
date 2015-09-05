@@ -3,8 +3,10 @@ package gzip
 
 import (
 	"compress/gzip"
+	"io/ioutil"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/codegangsta/negroni"
 )
@@ -43,18 +45,23 @@ func (grw gzipResponseWriter) Write(b []byte) (int, error) {
 	return grw.w.Write(b)
 }
 
-// handler struct contains the ServeHTTP method and the compressionLevel to be
-// used.
+// handler struct contains the ServeHTTP method
 type handler struct {
-	compressionLevel int
+	pool sync.Pool
 }
 
 // Gzip returns a handler which will handle the Gzip compression in ServeHTTP.
 // Valid values for level are identical to those in the compress/gzip package.
 func Gzip(level int) *handler {
-	return &handler{
-		compressionLevel: level,
+	h := &handler{}
+	h.pool.New = func() interface{} {
+		gz, err := gzip.NewWriterLevel(ioutil.Discard, level)
+		if err != nil {
+			panic(err)
+		}
+		return gz
 	}
+	return h
 }
 
 // ServeHTTP wraps the http.ResponseWriter with a gzip.Writer.
@@ -77,14 +84,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 		return
 	}
 
-	// Create new gzip Writer. Skip compression if an invalid compression
-	// level was set.
-	gz, err := gzip.NewWriterLevel(w, h.compressionLevel)
-	if err != nil {
-		next(w, r)
-		return
-	}
-	defer gz.Close()
+	// Retrieve gzip writer from the pool. Reset it to use the ResponseWriter.
+	// This allows us to re-use an already allocated buffer rather than
+	// allocating a new buffer for every request.
+	gz := h.pool.Get().(*gzip.Writer)
+	gz.Reset(w)
 
 	// Set the appropriate gzip headers.
 	headers := w.Header()
@@ -105,4 +109,8 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 
 	// Delete the content length after we know we have been written to.
 	grw.Header().Del(headerContentLength)
+
+	gz.Close()
+
+	h.pool.Put(gz)
 }
