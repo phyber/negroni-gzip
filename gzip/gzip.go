@@ -87,7 +87,11 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 	// Retrieve gzip writer from the pool. Reset it to use the ResponseWriter.
 	// This allows us to re-use an already allocated buffer rather than
 	// allocating a new buffer for every request.
+	// We defer g.pool.Put here so that the gz writer is returned to the
+	// pool if any thing after here fails for some reason (functions in
+	// next could potentially panic, etc)
 	gz := h.pool.Get().(*gzip.Writer)
+	defer h.pool.Put(gz)
 	gz.Reset(w)
 
 	// Set the appropriate gzip headers.
@@ -111,6 +115,4 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 	grw.Header().Del(headerContentLength)
 
 	gz.Close()
-
-	h.pool.Put(gz)
 }
