@@ -94,14 +94,17 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 	defer h.pool.Put(gz)
 	gz.Reset(w)
 
-	// Set the appropriate gzip headers.
-	headers := w.Header()
-	headers.Set(headerContentEncoding, encodingGzip)
-	headers.Set(headerVary, headerAcceptEncoding)
-
 	// Wrap the original http.ResponseWriter with negroni.ResponseWriter
 	// and create the gzipResponseWriter.
 	nrw := negroni.NewResponseWriter(w)
+
+	// Set headers only if WriteHeader has been called
+	nrw.Before(func(w negroni.ResponseWriter) {
+		headers := w.Header()
+		headers.Set(headerContentEncoding, encodingGzip)
+		headers.Set(headerVary, headerAcceptEncoding)
+	})
+
 	grw := gzipResponseWriter{
 		gz,
 		nrw,
