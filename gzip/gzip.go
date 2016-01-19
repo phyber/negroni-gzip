@@ -28,6 +28,11 @@ const (
 	NoCompression      = gzip.NoCompression
 )
 
+type Options struct {
+	Level           int
+	ExcludeSuffixes []string
+}
+
 // gzipResponseWriter is the ResponseWriter that negroni.ResponseWriter is
 // wrapped in.
 type gzipResponseWriter struct {
@@ -48,14 +53,15 @@ func (grw gzipResponseWriter) Write(b []byte) (int, error) {
 // handler struct contains the ServeHTTP method
 type handler struct {
 	pool sync.Pool
+	opt  *Options
 }
 
 // Gzip returns a handler which will handle the Gzip compression in ServeHTTP.
 // Valid values for level are identical to those in the compress/gzip package.
-func Gzip(level int) *handler {
-	h := &handler{}
+func Gzip(opt *Options) *handler {
+	h := &handler{opt: opt}
 	h.pool.New = func() interface{} {
-		gz, err := gzip.NewWriterLevel(ioutil.Discard, level)
+		gz, err := gzip.NewWriterLevel(ioutil.Discard, h.opt.Level)
 		if err != nil {
 			panic(err)
 		}
@@ -66,6 +72,14 @@ func Gzip(level int) *handler {
 
 // ServeHTTP wraps the http.ResponseWriter with a gzip.Writer.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+	// Skip specified suffixes (images e.g.)
+	for _, suffix := range h.opt.ExcludeSuffixes {
+		if strings.HasSuffix(r.URL.Path, suffix) {
+			next(w, r)
+			return
+		}
+	}
+
 	// Skip compression if the client doesn't accept gzip encoding.
 	if !strings.Contains(r.Header.Get(headerAcceptEncoding), encodingGzip) {
 		next(w, r)
