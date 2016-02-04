@@ -29,25 +29,70 @@ const (
 )
 
 type Options struct {
-	Level           int
-	ExcludeSuffixes []string
+	Level               int
+	ExcludeContentTypes []string
 }
 
 // gzipResponseWriter is the ResponseWriter that negroni.ResponseWriter is
 // wrapped in.
 type gzipResponseWriter struct {
-	w *gzip.Writer
+	w                   *gzip.Writer
+	excludeContentTypes []string
+	skipCompression     bool
+	wroteHeader         bool
 	negroni.ResponseWriter
 }
 
 // Write writes bytes to the gzip.Writer. It will also set the Content-Type
 // header using the net/http library content type detection if the Content-Type
 // header was not set yet.
-func (grw gzipResponseWriter) Write(b []byte) (int, error) {
-	if len(grw.Header().Get(headerContentType)) == 0 {
-		grw.Header().Set(headerContentType, http.DetectContentType(b))
+func (grw *gzipResponseWriter) Write(b []byte) (int, error) {
+	if !grw.wroteHeader {
+		// It is not too late to set Content-Type!
+		contentType := grw.Header().Get(headerContentType)
+		if len(contentType) == 0 {
+			contentType = http.DetectContentType(b)
+			grw.Header().Set(headerContentType, contentType)
+		}
+
+		for _, ct := range grw.excludeContentTypes {
+			if contentType == ct {
+				grw.skipCompression = true
+				break
+			}
+		}
+
+		if !grw.skipCompression {
+			grw.Header().Set(headerContentEncoding, encodingGzip)
+			grw.Header().Set(headerVary, headerAcceptEncoding)
+		}
+
+		grw.wroteHeader = true
 	}
-	return grw.w.Write(b)
+
+	if grw.skipCompression {
+		return grw.ResponseWriter.Write(b) // bypass
+	} else {
+		return grw.w.Write(b)
+	}
+}
+
+func (grw *gzipResponseWriter) WriteHeader(s int) {
+	contentType := grw.Header().Get(headerContentType)
+	for _, ct := range grw.excludeContentTypes {
+		if contentType == ct {
+			grw.skipCompression = true
+			break
+		}
+	}
+
+	if !grw.skipCompression {
+		grw.Header().Set(headerContentEncoding, encodingGzip)
+		grw.Header().Set(headerVary, headerAcceptEncoding)
+	}
+
+	grw.wroteHeader = true
+	grw.ResponseWriter.WriteHeader(s)
 }
 
 // handler struct contains the ServeHTTP method
@@ -72,14 +117,6 @@ func Gzip(opt *Options) *handler {
 
 // ServeHTTP wraps the http.ResponseWriter with a gzip.Writer.
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	// Skip specified suffixes (images e.g.)
-	for _, suffix := range h.opt.ExcludeSuffixes {
-		if strings.HasSuffix(r.URL.Path, suffix) {
-			next(w, r)
-			return
-		}
-	}
-
 	// Skip compression if the client doesn't accept gzip encoding.
 	if !strings.Contains(r.Header.Get(headerAcceptEncoding), encodingGzip) {
 		next(w, r)
@@ -112,24 +149,20 @@ func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.Ha
 	// and create the gzipResponseWriter.
 	nrw := negroni.NewResponseWriter(w)
 
-	// Set headers only if WriteHeader has been called
-	nrw.Before(func(w negroni.ResponseWriter) {
-		headers := w.Header()
-		headers.Set(headerContentEncoding, encodingGzip)
-		headers.Set(headerVary, headerAcceptEncoding)
-	})
-
 	grw := gzipResponseWriter{
-		gz,
-		nrw,
+		w:                   gz,
+		excludeContentTypes: h.opt.ExcludeContentTypes,
+		ResponseWriter:      nrw,
 	}
 
 	// Call the next handler supplying the gzipResponseWriter instead of
 	// the original.
-	next(grw, r)
+	next(&grw, r)
 
 	// Delete the content length after we know we have been written to.
 	grw.Header().Del(headerContentLength)
 
-	gz.Close()
+	if !grw.skipCompression {
+		gz.Close()
+	}
 }
