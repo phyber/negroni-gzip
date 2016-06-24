@@ -1,6 +1,6 @@
 # gzip
 
-Gzip middleware for [Negroni](https://github.com/codegangsta/negroni).
+Gzip middleware for [Negroni](https://github.com/urfave/negroni).
 
 Mostly a copy of the Martini gzip module with small changes to make it function
 under Negroni. Support for setting the compression level has also been added
@@ -15,7 +15,7 @@ import (
     "fmt"
     "net/http"
 
-    "github.com/codegangsta/negroni"
+    "github.com/urfave/negroni"
     "github.com/phyber/negroni-gzip/gzip"
 )
 
