@@ -77,6 +77,27 @@ func Test_ServeHTTP_CompressionWithNoGzipHeader(t *testing.T) {
 	}
 }
 
+func Test_ServeHTTP_CompressionWithPrecompressedResponse(t *testing.T) {
+	gzipHandler := Gzip(DefaultCompression)
+	w := httptest.NewRecorder()
+
+	req, err := http.NewRequest("GET", "http://localhost/foobar", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	req.Header.Set(headerAcceptEncoding, encodingGzip)
+
+	gzipHandler.ServeHTTP(w, req, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set(headerContentEncoding, "deflate")
+		testHTTPContent(w, r)
+	})
+
+	if w.Body.String() != gzipTestString {
+		t.Fail()
+	}
+}
+
 func Test_ServeHTTP_InvalidCompressionLevel(t *testing.T) {
 	gzipHandler := Gzip(gzipInvalidCompressionLevel)
 	w := httptest.NewRecorder()
