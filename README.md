@@ -6,6 +6,9 @@ Mostly a copy of the Martini gzip module with small changes to make it function
 under Negroni. Support for setting the compression level has also been added
 and tests have been written. Test coverage is 100% according to `go cover`.
 
+> Compressing TLS traffic may leak the page contents to an attacker if the page
+> contains user input. Ref: http://security.stackexchange.com/a/102015/12208
+
 ## Usage
 
 ~~~ go
